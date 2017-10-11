@@ -1,166 +1,335 @@
-# Chat Extensions (Tasks)
-This is the folder for Tasks, a bot that demonstrates [Chat Extensions](https://developers.facebook.com/docs/messenger-platform/design-best-practices/guides/chat-extensions) on the Messenger Platform.
+# 🤖 Creating your own Facebook Messenger bot
 
-**[<img src="../docs/assets/ViewMessenger.png" width="200">](https://m.me/MessengerTaskBot)**
+![Alt text](/demo/Demo.gif)
 
-## Everything we used to make this Bot
+Facebook recently opened up their Messenger platform to enable bots to converse with users through Facebook Apps and on Facebook Pages. 
 
-### Technologies used
+You can read the  [documentation](https://developers.facebook.com/docs/messenger-platform/quickstart) the Messenger team prepared but it's not very clear for beginners and intermediate hackers. 
 
-#### ECMAScript 7 (“ES7” / JavaScript)
-ECMAScript™ is the standard behind JavaScript. It has had a number of very useful additions over the past several years, modernizing the syntax and providing new capabilities.
+So instead here is how to create your own messenger bot in 15 minutes.
 
-*[Learn More](https://developer.mozilla.org/en-US/docs/Web/JavaScript/New_in_JavaScript/ECMAScript_Next_support_in_Mozilla)*
+## 🙌 Get set
 
-#### Babel
-Not all browsers are able to run ES7. We use Babel to generate earlier versions of JavaScript from ES7, so that it will run on browsers that haven’t yet implemented the newer standard.
+Messenger bots uses a web server to process messages it receives or to figure out what messages to send. You also need to have the bot be authenticated to speak with the web server and the bot approved by Facebook to speak with the public.
 
-*[Learn More](https://babeljs.io/)*
+You can also skip the whole thing by git cloning this repository, running npm install, and run a server somewhere.
 
-#### Webpack
-Webpack is the de facto module bundler for JavaScript development. It is highly configurable and extensible, and can even compile your other assets like images and stylesheets. This repository keeps things pretty simple as a jumping off point for your projects.
+### *Build the server*
 
-*[Learn More](https://webpack.github.io/)*
+1. Install the Heroku toolbelt from here https://toolbelt.heroku.com to launch, stop and monitor instances. Sign up for free at https://www.heroku.com if you don't have an account yet.
 
-#### Node.js
-Node enables us to use JavaScript outside of a browser and directly on our machines to perform the logic necessary to determine what messages to send to the end user and when.
+2. Install Node from here https://nodejs.org, this will be the server environment. Then open up Terminal or Command Line Prompt and make sure you've got the very most recent version of npm by installing it again:
 
-*[Learn More](https://nodejs.org/en/docs/)*
+    ```
+    sudo npm install npm -g
+    ```
 
-#### Express.js
-Express is a helpful framework built around Node.js for performing actions as a web server. e.g, Taking web page requests, responding and serving images to users.
+3. Create a new folder somewhere and let's create a new Node project. Hit Enter to accept the defaults.
 
-*[Learn More](http://expressjs.com/)*
+    ```
+    npm init
+    ```
 
-#### Embedded JavaScript Templates (EJS)
-EJS is a very simple templating language. This helps us create HTML for the pages we show in a programmatic way, and inject values into a web page. Here we use it to decide whether to show the Preferences view, the Product view or the Error page, and to point the WebView at the correct list for the viewer.
+4. Install the additional Node dependencies. Express is for the server, request is for sending out messages and body-parser is to process messages.
 
-*[Learn More](http://ejs.co/)*
+    ```
+    npm install express request body-parser --save
+    ```
 
-#### React.js
-An amazing framework that allows us to create highly interactive user interfaces. Used heavily in this example to create the Preferences view.
+5. Create an index.js file in the folder and copy this into it. We will start by authenticating the bot.
 
-*[Learn More](https://facebook.github.io/react/)*
+    ```javascript
+    'use strict'
+    
+    const express = require('express')
+    const bodyParser = require('body-parser')
+    const request = require('request')
+    const app = express()
 
-#### Socket.IO
-Simplifies real-time interactions between users and the server.
+    app.set('port', (process.env.PORT || 5000))
 
-*[Learn More](https://socket.io/)*
+    // Process application/x-www-form-urlencoded
+    app.use(bodyParser.urlencoded({extended: false}))
 
-#### Knex.js
-Knex.js is a SQL query builder for Node.js that is compatible with Postgres, MSSQL, MySQL, MariaDB, SQLite3, and Oracle.
+    // Process application/json
+    app.use(bodyParser.json())
 
-*[Learn More](http://knexjs.org/)*
+    // Index route
+    app.get('/', function (req, res) {
+    	res.send('Hello world, I am a chat bot')
+    })
 
-#### WeUI
-You can get started quickly with mobile-friendly web UI by using a library of components like the one from [WeUI](https://weui.io/).
+    // for Facebook verification
+    app.get('/webhook/', function (req, res) {
+    	if (req.query['hub.verify_token'] === 'my_voice_is_my_password_verify_me') {
+    		res.send(req.query['hub.challenge'])
+    	}
+    	res.send('Error, wrong token')
+    })
 
+    // Spin up the server
+    app.listen(app.get('port'), function() {
+    	console.log('running on port', app.get('port'))
+    })
+    ```
 
-## Setup
-This demo bot is immediately runnable on Heroku!
+6. Make a file called Procfile and copy this. This is so Heroku can know what file to run.
 
-*Note: It is not recommended to run this bot locally on your machine. It will require extra configuration to make your local machine accessible by external Internet services. Without the extra configuration, Facebook Messenger will not be able to reach your bot.*
+    ```
+    web: node index.js
+    ```
 
-### Prerequisites
-* Node v7.4 or later ([https://nodejs.org/en/download/](https://nodejs.org/en/download/))
-* Yarn ([https://yarnpkg.com/en/](https://yarnpkg.com/en/))
-* Heroku CLI ([https://devcenter.heroku.com/articles/heroku-cli](https://devcenter.heroku.com/articles/heroku-cli))
-* Facebook developers account ([https://developers.facebook.com](https://developers.facebook.com) )
-* Postgres ([https://www.postgresql.org](https://www.postgresql.org))
+7. Commit all the code with Git then create a new Heroku instance and push the code to the cloud.
 
-### Run this as your very own Messenger bot on heroku
-*(Ensure the above prerequisites are installed on your machine)*
+    ```
+    git init
+    git add .
+    git commit --message "hello world"
+    heroku create
+    git push heroku master
+    ```
 
-#### 1. Setup your Bot on Heroku
-##### Run the following
-```bash
-$ cd /path/to/fb-chatbots
+### *Setup the Facebook App*
 
-$ heroku create
+1. Create or configure a Facebook App or Page here https://developers.facebook.com/apps/
 
-# HEROKU_APPID is given to you from the above command. Run `heroku apps` to list them all.
-$ heroku addons:create heroku-postgresql --app {HEROKU_APPID}
+    ![Alt text](/demo/shot1.jpg)
 
-# URL_TO_HEROKU_APP is the URL given to you from the above command
-$ heroku config:set APP_URL='https://{URL_TO_HEROKU_APP}'
+2. In the app go to Messenger tab then click Setup Webhook. Here you will put in the URL of your Heroku server and a token. Make sure to check all the subscription fields. 
 
-# Note the token can be any word chosen by you and is used to by Facebook to check that they have the correct server for your Messenger Bot
-$ heroku config:set WEBHOOK_TOKEN='random_demo_token_123'
+    ![Alt text](/demo/shot3.jpg)
 
-# This pushes just the chat-extensions folder to Heroku
-$ git subtree push --prefix chat-extensions heroku master
+3. Get a Page Access Token and save this somewhere. 
+
+    ![Alt text](/demo/shot2.jpg)
+
+4. Go back to Terminal and type in this command to trigger the Facebook app to send messages. Remember to use the token you requested earlier.
+
+    ```bash
+    curl -X POST "https://graph.facebook.com/v2.6/me/subscribed_apps?access_token=<PAGE_ACCESS_TOKEN>"
+    ```
+
+### *Setup the bot*
+
+Now that Facebook and Heroku can talk to each other we can code out the bot.
+
+1. Add an API endpoint to index.js to process messages. Remember to also include the token we got earlier. 
+
+    ```javascript
+    app.post('/webhook/', function (req, res) {
+	    let messaging_events = req.body.entry[0].messaging
+	    for (let i = 0; i < messaging_events.length; i++) {
+		    let event = req.body.entry[0].messaging[i]
+		    let sender = event.sender.id
+		    if (event.message && event.message.text) {
+			    let text = event.message.text
+			    sendTextMessage(sender, "Text received, echo: " + text.substring(0, 200))
+		    }
+	    }
+	    res.sendStatus(200)
+    })
+
+    const token = "<PAGE_ACCESS_TOKEN>"
+    ```
+    
+    **Optional, but recommended**: keep your app secrets out of version control!
+    - On Heroku, its easy to create dynamic runtime variables (known as [config vars](https://devcenter.heroku.com/articles/config-vars)). This can be done in the Heroku dashboard UI for your app **or** from the command line:
+    ![Alt text](/demo/config_vars.jpg)
+    ```bash
+    heroku config:set FB_PAGE_ACCESS_TOKEN=fake-access-token-dhsa09uji4mlkasdfsd
+    
+    # view
+    heroku config
+    ```
+
+    - For local development: create an [environmental variable](https://en.wikipedia.org/wiki/Environment_variable) in your current session or add to your shell config file.
+    ```bash
+    # create env variable for current shell session
+    export FB_PAGE_ACCESS_TOKEN=fake-access-token-dhsa09uji4mlkasdfsd
+    
+    # alternatively, you can add this line to your shell config
+    # export FB_PAGE_ACCESS_TOKEN=fake-access-token-dhsa09uji4mlkasdfsd
+    
+    echo $FB_PAGE_ACCESS_TOKEN
+    ```
+    
+    - `config var` access at runtime
+    ``` javascript
+    const token = process.env.FB_PAGE_ACCESS_TOKEN
+    ```
+    
+    
+3. Add a function to echo back messages
+
+    ```javascript
+    function sendTextMessage(sender, text) {
+	    let messageData = { text:text }
+	    request({
+		    url: 'https://graph.facebook.com/v2.6/me/messages',
+		    qs: {access_token:token},
+		    method: 'POST',
+    		json: {
+			    recipient: {id:sender},
+    			message: messageData,
+    		}
+    	}, function(error, response, body) {
+    		if (error) {
+			    console.log('Error sending messages: ', error)
+    		} else if (response.body.error) {
+			    console.log('Error: ', response.body.error)
+		    }
+	    })
+    }
+    ```
+
+4. Commit the code again and push to Heroku
+
+    ```
+    git add .
+    git commit -m 'updated the bot to speak'
+    git push heroku master
+    ```
+    
+5. Go to the Facebook Page and click on Message to start chatting!
+
+![Alt text](/demo/shot4.jpg)
+
+## ⚙ Customize what the bot says
+
+### *Send a Structured Message*
+
+Facebook Messenger can send messages structured as cards or buttons. 
+
+![Alt text](/demo/shot5.jpg)
+
+1. Copy the code below to index.js to send a test message back as two cards.
+
+    ```javascript
+    function sendGenericMessage(sender) {
+	    let messageData = {
+		    "attachment": {
+			    "type": "template",
+			    "payload": {
+    				"template_type": "generic",
+				    "elements": [{
+    					"title": "First card",
+					    "subtitle": "Element #1 of an hscroll",
+					    "image_url": "http://messengerdemo.parseapp.com/img/rift.png",
+					    "buttons": [{
+						    "type": "web_url",
+						    "url": "https://www.messenger.com",
+						    "title": "web url"
+					    }, {
+						    "type": "postback",
+						    "title": "Postback",
+						    "payload": "Payload for first element in a generic bubble",
+					    }],
+				    }, {
+					    "title": "Second card",
+					    "subtitle": "Element #2 of an hscroll",
+					    "image_url": "http://messengerdemo.parseapp.com/img/gearvr.png",
+					    "buttons": [{
+						    "type": "postback",
+						    "title": "Postback",
+						    "payload": "Payload for second element in a generic bubble",
+					    }],
+				    }]
+			    }
+		    }
+	    }
+	    request({
+		    url: 'https://graph.facebook.com/v2.6/me/messages',
+		    qs: {access_token:token},
+		    method: 'POST',
+		    json: {
+			    recipient: {id:sender},
+			    message: messageData,
+		    }
+	    }, function(error, response, body) {
+		    if (error) {
+			    console.log('Error sending messages: ', error)
+		    } else if (response.body.error) {
+			    console.log('Error: ', response.body.error)
+		    }
+	    })
+    }
+    ```
+
+2. Update the webhook API to look for special messages to trigger the cards
+
+    ```javascript
+    app.post('/webhook/', function (req, res) {
+	    let messaging_events = req.body.entry[0].messaging
+	    for (let i = 0; i < messaging_events.length; i++) {
+		    let event = req.body.entry[0].messaging[i]
+		    let sender = event.sender.id
+		    if (event.message && event.message.text) {
+			    let text = event.message.text
+			    if (text === 'Generic') {
+				    sendGenericMessage(sender)
+			    	continue
+			    }
+			    sendTextMessage(sender, "Text received, echo: " + text.substring(0, 200))
+		    }
+	    }
+	    res.sendStatus(200)
+    })
+    ```
+
+### *Act on what the user messages*
+
+What happens when the user clicks on a message button or card though? Let's update the webhook API one more time to send back a postback function.
+
+```javascript  
+  app.post('/webhook/', function (req, res) {
+    let messaging_events = req.body.entry[0].messaging
+    for (let i = 0; i < messaging_events.length; i++) {
+      let event = req.body.entry[0].messaging[i]
+      let sender = event.sender.id
+      if (event.message && event.message.text) {
+  	    let text = event.message.text
+  	    if (text === 'Generic') {
+  		    sendGenericMessage(sender)
+  		    continue
+  	    }
+  	    sendTextMessage(sender, "Text received, echo: " + text.substring(0, 200))
+      }
+      if (event.postback) {
+  	    let text = JSON.stringify(event.postback)
+  	    sendTextMessage(sender, "Postback received: "+text.substring(0, 200), token)
+  	    continue
+      }
+    }
+    res.sendStatus(200)
+  })
 ```
 
-##### It should look like this in your terminal
-<img src="../docs/assets/account_terminal.png" width="600">
+Git add, commit, and push to Heroku again.
 
-##### Other useful commands for pushing the code to Heroku
-To force push to Heroku, useful for moving your changes from your machine to Heroku, use this command:
-* `git push --force heroku 'git subtree split --prefix chat-extensions HEAD':master`
+Now when you chat with the bot and type 'Generic' you can see this.
 
-#### 2. Setup your Bot on Facebook
+   ![Alt text](/demo/shot6.jpg)
 
-##### I. Create a Facebook App
-<img src="../docs/assets/add_new_app.png" width="600">
+## 📡 How to share your bot
 
-1. Navigate here [https://developers.facebook.com/apps](https://developers.facebook.com/apps)
-2. Add a new app with the category `Apps for Messenger`
+### *Add a chat button to your webpage*
 
-##### II. Setup Webhooks
-*These are the actions we want to sign up to receive from users talking to us in Messenger.*
-<img src="../docs/assets/webhook.png" width="600">
+Go [here](https://developers.facebook.com/docs/messenger-platform/plugin-reference) to learn how to add a chat button your page.
 
-1. Go to the Messenger settings for your app and select `Setup Webhook`
-2. Insert `https://{your_heroku_app_url}/webhook` into the `Callback URL` field
-3. Insert the value you used for `WEBHOOK_TOKEN` into the `Verify Token` field
-4. Select the Subscription Fields
-    1. `messages`
-    2. `messaging_postbacks`
-5. Select `Verify and Save`
-6. Select the Facebook Page that should subscribe to the Webhooks in the `Webhooks` section of Messenger Settings
+### *Create a shortlink*
 
-![Image of Webhook Messenger Settings, where pages can subscribe to listen to your Webhooks](../docs/assets/webhook_subscribing.png)
+You can use https://m.me/<PAGE_USERNAME> to have someone start a chat.
 
-##### III. Get a Page Access Token
-<img src="../docs/assets/page_token.png" width="600">
+## 💡 What's next?
 
-1. Select or Create a page and get the page access token
-3. Go back to your terminal and inside the repository set the `PAGE_ACCESS_TOKEN` config on Heroku.
-```bash
-$ heroku config:set PAGE_ACCESS_TOKEN='your_page_access_token'
-```
+You can learn how to get your bot approved for public use [here](https://developers.facebook.com/docs/messenger-platform/app-review).
 
-#### 3. Now you should be able to go to your page and message your bot!
+You can also connect an AI brain to your bot [here](https://wit.ai)
 
-*Note: you will need to add testers in the development panel or have the app approved by Facebook for others to see it.*
+Read about all things chat bots with the ChatBots Magazine [here](https://medium.com/chat-bots)
 
-### Pushing changes to Heroku
-Because all the building is done locally, make sure to run:
-```bash
-$ yarn build
-```
-before you commit and push your changes.
+You can also design Messenger bots in Sketch with the [Bots UI Kit](https://bots.mockuuups.com)!
 
-### Running locally
-You may want to run this bot on a platform outside of Heroku or simply have it available locally for testing purposes.
-```bash
-$ cd path/to/repo/chat-extensions
-$ createdb list_bot_dev
-$ createdb list_bot_test
-$ yarn install
-$ knex migrate:latest
-$ knex seed:run
-$ yarn build:watch
+## How I can help
 
-# In another tab
-
-$ export DEMO=true
-$ export LOCAL=true
-$ yarn start
-```
-
-### Running tests & linters
-```bash
-$ cd path/to/repo/chat-extensions
-$ yarn quality
-```
+I build and design bots all day. Email me for help!
